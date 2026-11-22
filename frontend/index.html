@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CARZONE — AI Fair-Market Used Car Valuation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #EAECEF;
+      --surface: #FFFFFF;
+      --card-bg: #F4F5F7;
+      --card-hover: #ECEEF2;
+      --ink: #111317;
+      --ink-secondary: #5C626E;
+      --ink-muted: #9AA0AC;
+      --border: #EAECEF;
+      --border-strong: #DCE0E6;
+      --mint-start: #B4EED1;
+      --mint-mid: #D7F6E7;
+      --mint-end: #F2F5F4;
+      --mint-accent: #10B981;
+      --amber: #D97706;
+      --rose: #E11D48;
+      --radius-shell: 28px;
+      --radius-card: 22px;
+      --radius-pill: 10px;
+      --shadow-shell: 0 28px 70px rgba(17, 19, 23, 0.08), 0 4px 18px rgba(17, 19, 23, 0.03);
+      --shadow-hero: 0 22px 48px rgba(16, 185, 129, 0.14), 0 8px 20px rgba(17, 19, 23, 0.06);
+      --transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--canvas);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 28px 24px 40px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      max-width: 1380px;
+      margin: 0 auto;
+      background: var(--surface);
+      border-radius: var(--radius-shell);
+      box-shadow: var(--shadow-shell);
+      overflow: hidden;
+      min-height: calc(100vh - 68px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 20px 36px;
+      border-bottom: 1px solid var(--border);
+      background: #FFFFFF;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-link {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--ink-muted);
+      text-decoration: none;
+      cursor: pointer;
+      transition: var(--transition);
+      background: none;
+      border: none;
+      font-family: inherit;
+      padding: 4px 0;
+    }
+
+    .nav-link:hover { color: var(--ink); }
+    .nav-link.active { color: var(--ink); font-weight: 600; }
+
+    .brand-wordmark {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.32em;
+      color: var(--ink);
+      text-transform: uppercase;
+      user-select: none;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 14px;
+    }
+
+    .api-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #F4F5F7;
+      color: var(--ink-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .api-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #9CA3AF;
+    }
+
+    .api-badge.live .api-dot {
+      background: #10B981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+    }
+
+    .api-badge.preview .api-dot {
+      background: #F59E0B;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .icon-btn:hover {
+      background: var(--ink);
+      color: #FFFFFF;
+      border-color: var(--ink);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      flex: 1;
+    }
+
+    .sidebar {
+      padding: 28px 26px 32px 32px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      background: #FFFFFF;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .reset-link {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .reset-link:hover { color: var(--ink); }
+
+    .search-wrap { position: relative; }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ink-muted);
+      pointer-events: none;
+    }
+
+    .search-input, .select-input, .num-input {
+      width: 100%;
+      padding: 10px 13px;
+      border-radius: 11px;
+      border: 1px solid var(--border-strong);
+      background: #FFFFFF;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--ink);
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .search-input { padding-left: 36px; }
+    .search-input:focus, .select-input:focus, .num-input:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(17, 19, 23, 0.06);
+    }
+
+    .section-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-val {
+      color: var(--ink);
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: none;
+      font-size: 12px;
+    }
+
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .pill-btn {
+      padding: 7px 12px;
+      border-radius: 9px;
+      font-size: 12.5px;
+      font-weight: 500;
+      border: 1px solid var(--border-strong);
+      background: #FFFFFF;
+      color: var(--ink-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .pill-btn:hover { border-color: var(--ink); color: var(--ink); }
+    .pill-btn.active {
+      background: var(--ink);
+      color: #FFFFFF;
+      border-color: var(--ink);
+      font-weight: 600;
+    }
+
+    .histogram-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 36px;
+      padding: 0 2px;
+      margin-bottom: 6px;
+    }
+
+    .hist-bar {
+      flex: 1;
+      background: #E2E5EA;
+      border-radius: 2px 2px 0 0;
+      transition: background 0.2s ease;
+    }
+
+    .hist-bar.in-range { background: var(--ink); }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      background: #E5E7EB;
+      border-radius: 99px;
+      outline: none;
+      margin: 6px 0 12px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--ink);
+      border: 2.5px solid #FFFFFF;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+
+    .dual-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .mini-field label {
+      display: block;
+      font-size: 10.5px;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .brand-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      max-height: 210px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .brand-list::-webkit-scrollbar { width: 4px; }
+    .brand-list::-webkit-scrollbar-thumb { background: #E2E5EA; border-radius: 99px; }
+
+    .brand-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 2px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 13.5px;
+      color: var(--ink-secondary);
+      transition: var(--transition);
+    }
+
+    .brand-item:hover { color: var(--ink); }
+    .brand-item.active { color: var(--ink); font-weight: 600; }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check-box {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid #D1D5DB;
+      background: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .brand-item.active .check-box,
+    .toggle-row.active .check-box {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #FFFFFF;
+    }
+
+    .brand-count {
+      font-size: 11px;
+      color: var(--ink-muted);
+      font-weight: 500;
+    }
+
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 0 0 1px #D1D5DB;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .color-swatch.active {
+      box-shadow: 0 0 0 2px var(--ink);
+      transform: scale(1.12);
+    }
+
+    .toggle-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--ink-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-row.active { color: var(--ink); font-weight: 500; }
+
+    .primary-cta {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 13px;
+      border: none;
+      background: var(--ink);
+      color: #FFFFFF;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .primary-cta:hover {
+      background: #242830;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(17, 19, 23, 0.16);
+    }
+
+    .main-panel {
+      padding: 28px 34px 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      background: #FFFFFF;
+    }
+
+    .panel-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .panel-heading {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .panel-heading span {
+      color: var(--ink-muted);
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .panel-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sort-pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: #FFFFFF;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .sort-pill:hover { border-color: var(--ink); }
+
+    .view-switch {
+      display: inline-flex;
+      background: #F4F5F7;
+      padding: 3px;
+      border-radius: 10px;
+      gap: 2px;
+    }
+
+    .view-btn {
+      width: 32px;
+      height: 30px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .view-btn.active {
+      background: #FFFFFF;
+      color: var(--ink);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    .config-ribbon {
+      display: grid;
+      grid-template-columns: 1.3fr 1.6fr 1fr 0.9fr;
+      gap: 12px;
+      background: #F8F9FA;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .ribbon-field label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-muted);
+      margin-bottom: 5px;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .car-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-card);
+      padding: 24px 26px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      min-height: 320px;
+      transition: var(--transition);
+      border: 1px solid rgba(17, 19, 23, 0.03);
+    }
+
+    .car-card.interactive:hover {
+      background: linear-gradient(150deg, var(--mint-start) 0%, var(--mint-mid) 52%, var(--mint-end) 100%);
+      transform: translateY(-4px) rotate(-0.7deg);
+      box-shadow: var(--shadow-hero);
+      cursor: pointer;
+    }
+
+    .car-card.hero-mint {
+      background: linear-gradient(150deg, var(--mint-start) 0%, var(--mint-mid) 50%, var(--mint-end) 100%);
+      box-shadow: var(--shadow-hero);
+      transform: rotate(-0.6deg);
+    }
+
+    .car-card.hero-mint:hover {
+      transform: rotate(0deg) translateY(-3px);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.015em;
+      line-height: 1.25;
+    }
+
+    .card-subtitle {
+      font-size: 12.5px;
+      color: var(--ink-secondary);
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    .card-price-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .card-price {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .arrow-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(17, 19, 23, 0.06);
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    .car-card:hover .arrow-circle {
+      background: var(--ink);
+      color: #FFFFFF;
+    }
+
+    .watermark-text {
+      position: absolute;
+      left: 50%;
+      top: 53%;
+      transform: translate(-50%, -50%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 96px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: rgba(255, 255, 255, 0.56);
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 1;
+      user-select: none;
+    }
+
+    .car-stage {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 8px 6px;
+      min-height: 165px;
+    }
+
+    .car-photo {
+      width: 100%;
+      max-width: 345px;
+      height: 162px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 14px 26px rgba(17, 19, 23, 0.14);
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .car-card:hover .car-photo {
+      transform: scale(1.04) translateX(4px);
+    }
+
+    .car-svg {
+      width: 100%;
+      max-width: 340px;
+      height: auto;
+      filter: drop-shadow(0 18px 18px rgba(17, 19, 23, 0.16));
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .car-card:hover .car-svg {
+      transform: scale(1.035) translateX(3px);
+    }
+
+    .card-specs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(17, 19, 23, 0.07);
+      position: relative;
+      z-index: 2;
+    }
+
+    .spec-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 2px;
+    }
+
+    .spec-col:first-child { align-items: flex-start; text-align: left; }
+    .spec-col:last-child { align-items: flex-end; text-align: right; }
+
+    .spec-val {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .spec-lbl {
+      font-size: 11px;
+      color: var(--ink-secondary);
+      font-weight: 500;
+    }
+
+    .grade-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    .grade-great { background: #DCFCE7; color: #065F46; }
+    .grade-fair { background: #FEF3C7; color: #92400E; }
+    .grade-high { background: #FFE4E6; color: #9F1239; }
+
+    .chart-box {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 12px 0 8px;
+    }
+
+    .dep-svg {
+      width: 100%;
+      height: 155px;
+      overflow: visible;
+    }
+
+    .gauge-stage {
+      position: relative;
+      z-index: 2;
+      margin: 26px 0 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .gauge-track {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #A7F3D0 0%, #6EE7B7 25%, #E5E7EB 50%, #FDE68A 78%, #FDA4AF 100%);
+    }
+
+    .gauge-band {
+      position: absolute;
+      top: -4px;
+      height: 20px;
+      border-radius: 999px;
+      border: 2px solid var(--ink);
+      background: rgba(17, 19, 23, 0.08);
+      transition: var(--transition);
+    }
+
+    .gauge-marker {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: var(--transition);
+    }
+
+    .marker-mean {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--ink);
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .marker-ask {
+      width: 14px;
+      height: 14px;
+      background: #10B981;
+      border: 2.5px solid #FFFFFF;
+      transform: translate(-50%, -50%) rotate(45deg);
+      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .gauge-legend {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--ink-secondary);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+
+    .dot-black { width: 9px; height: 9px; border-radius: 50%; background: var(--ink); }
+    .dot-mint { width: 9px; height: 9px; background: #10B981; transform: rotate(45deg); }
+
+    .comp-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .comp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 13px;
+      border-radius: 13px;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .comp-row:hover {
+      border-color: var(--ink);
+      transform: translateX(3px);
+    }
+
+    .comp-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .comp-meta { font-size: 11.5px; color: var(--ink-muted); margin-top: 1px; }
+    .comp-price {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .hidden { display: none !important; }
+    .loading-pulse { opacity: 0.55; transition: opacity 0.2s; }
+
+    @media (max-width: 1080px) {
+      .workspace { grid-template-columns: 260px 1fr; }
+      .config-ribbon { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 860px) {
+      body { padding: 12px; }
+      .navbar { grid-template-columns: 1fr auto; padding: 16px 20px; }
+      .brand-wordmark { display: none; }
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); padding: 22px 20px; }
+      .main-panel { padding: 22px 20px; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .config-ribbon { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="navbar">
+      <nav class="nav-links">
+        <button class="nav-link active" id="tabValuation" onclick="switchView('valuation')">Valuation</button>
+        <button class="nav-link" id="tabShowroom" onclick="switchView('showroom')">Cars</button>
+      </nav>
+
+      <div class="brand-wordmark">CARZONE</div>
+
+      <div class="nav-actions">
+        <div class="api-badge" id="apiBadge">
+          <span class="api-dot"></span>
+          <span id="apiStatusText">Connecting...</span>
+        </div>
+        <button class="icon-btn" title="Reset defaults" onclick="resetDefaults()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            Filters
+          </div>
+          <button class="reset-link" onclick="resetDefaults()">Reset</button>
+        </div>
+
+        <div class="search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search brand or model..." oninput="handleSearch(this.value)" />
+        </div>
+
+        <div>
+          <div class="section-label">Fuel Type</div>
+          <div class="pill-group" id="fuelPills">
+            <button class="pill-btn" data-fuel="All" onclick="selectFuel('All')">All</button>
+            <button class="pill-btn active" data-fuel="Gasoline" onclick="selectFuel('Gasoline')">Gasoline</button>
+            <button class="pill-btn" data-fuel="Diesel" onclick="selectFuel('Diesel')">Diesel</button>
+            <button class="pill-btn" data-fuel="Plug-In Hybrid" onclick="selectFuel('Plug-In Hybrid')">Plug-In Hybrid</button>
+            <button class="pill-btn" data-fuel="Hybrid" onclick="selectFuel('Hybrid')">Hybrid</button>
+            <button class="pill-btn" data-fuel="E85 Flex Fuel" onclick="selectFuel('E85 Flex Fuel')">E85 Flex</button>
+            <button class="pill-btn" data-fuel="Missing" onclick="selectFuel('Missing')">Electric / EV</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">
+            <span>Asking Price</span>
+            <span class="section-val" id="askingLabel">$26,500</span>
+          </div>
+          <div class="histogram-wrap" id="priceHistogram"></div>
+          <input type="range" id="askingSlider" min="3000" max="120000" step="500" value="26500" oninput="syncAsking(this.value)" />
+          <div class="dual-inputs">
+            <div class="mini-field">
+              <label>Model Year</label>
+              <input type="number" id="yearInput" class="num-input" min="1990" max="2024" value="2016" oninput="schedulePredict()" />
+            </div>
+            <div class="mini-field">
+              <label>Mileage (mi)</label>
+              <input type="number" id="milageInput" class="num-input" min="100" max="250000" step="1000" value="67500" oninput="schedulePredict()" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Brands</div>
+          <div class="brand-list" id="brandList"></div>
+        </div>
+
+        <div>
+          <div class="section-label">
+            <span>Exterior Finish</span>
+            <span class="section-val" id="colorLabel">Green</span>
+          </div>
+          <div class="color-row" id="colorSwatches">
+            <button class="color-swatch active" data-color="Green" style="background:#156F52" title="Emerald Green" onclick="selectColor('Green')"></button>
+            <button class="color-swatch" data-color="Black" style="background:#181A1F" title="Obsidian Black" onclick="selectColor('Black')"></button>
+            <button class="color-swatch" data-color="White" style="background:#F3F4F6" title="Alpine White" onclick="selectColor('White')"></button>
+            <button class="color-swatch" data-color="Gray" style="background:#6B7280" title="Graphite Gray" onclick="selectColor('Gray')"></button>
+            <button class="color-swatch" data-color="Silver" style="background:#B8C0CC" title="Metallic Silver" onclick="selectColor('Silver')"></button>
+            <button class="color-swatch" data-color="Blue" style="background:#1D4ED8" title="Sapphire Blue" onclick="selectColor('Blue')"></button>
+            <button class="color-swatch" data-color="Red" style="background:#B91C1C" title="Crimson Red" onclick="selectColor('Red')"></button>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Vehicle History</div>
+          <div class="toggle-stack">
+            <div class="toggle-row active" id="toggleCleanTitle" onclick="toggleHistory('clean_title')">
+              <span class="check-box">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span>Clean Title Reported</span>
+            </div>
+            <div class="toggle-row active" id="toggleNoAccident" onclick="toggleHistory('accident')">
+              <span class="check-box">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span>No Accidents Reported</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="primary-cta" onclick="runValuation()">
+          <span>Run AI Valuation</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+        </button>
+      </aside>
+
+      <main class="main-panel">
+        <div class="panel-topbar">
+          <h1 class="panel-heading" id="panelHeading">AI Valuation <span id="listingCount">(179,957)</span></h1>
+          <div class="panel-controls">
+            <button class="sort-pill" id="priceModeBtn" onclick="togglePriceMode()">
+              <span id="priceModeLabel">Expected Mean</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+            </button>
+            <div class="view-switch">
+              <button class="view-btn active" id="btnGridView" title="Valuation Studio" onclick="switchView('valuation')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+              </button>
+              <button class="view-btn" id="btnShowroomView" title="Showroom Cars Grid" onclick="switchView('showroom')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="valuationView">
+          <div class="config-ribbon" style="margin-bottom: 22px;">
+            <div class="ribbon-field">
+              <label>Model &amp; Trim</label>
+              <select id="modelSelect" class="select-input" onchange="onModelChange()"></select>
+            </div>
+            <div class="ribbon-field">
+              <label>Engine Specification</label>
+              <input type="text" id="engineInput" class="num-input" value="295.0HP 3.5L V6 Cylinder Engine Gasoline Fuel" oninput="schedulePredict()" />
+            </div>
+            <div class="ribbon-field">
+              <label>Transmission</label>
+              <select id="transSelect" class="select-input" onchange="schedulePredict()">
+                <option value="8-Speed A/T">8-Speed A/T</option>
+                <option value="A/T">Automatic (A/T)</option>
+                <option value="Transmission w/Dual Shift Mode">Dual Shift Mode</option>
+                <option value="6-Speed A/T">6-Speed A/T</option>
+                <option value="10-Speed A/T">10-Speed A/T</option>
+                <option value="7-Speed A/T">7-Speed A/T</option>
+                <option value="9-Speed A/T">9-Speed A/T</option>
+                <option value="6-Speed M/T">6-Speed Manual</option>
+                <option value="CVT Transmission">CVT Transmission</option>
+                <option value="1-Speed A/T">1-Speed EV</option>
+              </select>
+            </div>
+            <div class="ribbon-field">
+              <label>Asking Price ($)</label>
+              <input type="number" id="askingInput" class="num-input" min="1000" max="250000" step="500" value="26500" oninput="syncAskingFromInput(this.value)" />
+            </div>
+          </div>
+
+          <div class="cards-grid" id="valuationCards">
+            <section class="car-card hero-mint">
+              <div class="watermark-text" id="heroWatermark">RX 350</div>
+              <div class="card-top">
+                <div>
+                  <div class="card-title" id="heroTitle">Lexus RX 350 Base</div>
+                  <div class="card-subtitle" id="heroSubtitle">2016 · Gasoline · 67,500 mi</div>
+                </div>
+                <div class="card-price-block">
+                  <div class="card-price" id="heroPrice">$27,994</div>
+                  <button class="arrow-circle" title="Refresh valuation" onclick="runValuation()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="car-stage" id="heroCarStage"></div>
+
+              <div class="card-specs">
+                <div class="spec-col">
+                  <span class="spec-val" id="specHp">295 HP</span>
+                  <span class="spec-lbl">Horsepower</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val" id="specEngine">3.5L V6</span>
+                  <span class="spec-lbl">Powertrain</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val" id="specGrade">Fair Price</span>
+                  <span class="spec-lbl">Deal Grade</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="car-card">
+              <div class="card-top">
+                <div>
+                  <div class="card-title">5-Year Depreciation</div>
+                  <div class="card-subtitle">Simulated at +12,000 miles / year</div>
+                </div>
+                <div class="card-price-block">
+                  <div class="card-price" id="depLossVal">-$14,489</div>
+                  <div class="arrow-circle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-box" id="depreciationChart"></div>
+
+              <div class="card-specs">
+                <div class="spec-col">
+                  <span class="spec-val" id="depYr1">$26,154</span>
+                  <span class="spec-lbl">Year +1 Value</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val" id="depYr3">$18,045</span>
+                  <span class="spec-lbl">Year +3 Value</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val" id="depYr5">$13,505</span>
+                  <span class="spec-lbl">Year +5 Value</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="car-card">
+              <div class="card-top">
+                <div>
+                  <div class="card-title">Fair Market Range</div>
+                  <div class="card-subtitle">80% Conformalized Quantile Interval (CQR)</div>
+                </div>
+                <div class="card-price-block">
+                  <span class="grade-pill grade-fair" id="dealGradeBadge">Fair Market Price</span>
+                </div>
+              </div>
+
+              <div class="gauge-stage">
+                <div class="gauge-legend">
+                  <span class="legend-item"><span class="dot-black"></span> Model Mean: <strong id="gaugeMeanLbl">$27,994</strong></span>
+                  <span class="legend-item"><span class="dot-mint"></span> Asking: <strong id="gaugeAskLbl">$26,500</strong></span>
+                </div>
+
+                <div class="gauge-track">
+                  <div class="gauge-band" id="gaugeBand" style="left:22%; width:56%;"></div>
+                  <div class="gauge-marker marker-mean" id="markerMean" style="left:52%;"></div>
+                  <div class="gauge-marker marker-ask" id="markerAsk" style="left:47%;"></div>
+                </div>
+
+                <div class="gauge-legend" style="font-size:11.5px; color:var(--ink-muted);">
+                  <span>Great Deal Zone</span>
+                  <span id="deltaSummary">-$1,494 vs Expected Mean</span>
+                  <span>Above Market</span>
+                </div>
+              </div>
+
+              <div class="card-specs">
+                <div class="spec-col">
+                  <span class="spec-val" id="specLow">$18,800</span>
+                  <span class="spec-lbl">10th Pct (Q10)</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val" id="specMedian">$26,018</span>
+                  <span class="spec-lbl">Median (expm1)</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val" id="specHigh">$37,121</span>
+                  <span class="spec-lbl">90th Pct (Q90)</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="car-card">
+              <div class="card-top">
+                <div>
+                  <div class="card-title" id="compCardTitle">Similar Lexus Models</div>
+                  <div class="card-subtitle">Click any trim to price live via FastAPI</div>
+                </div>
+                <button class="arrow-circle" title="Browse full Cars grid" onclick="switchView('showroom')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                </button>
+              </div>
+
+              <div class="comp-list" id="comparablesList"></div>
+
+              <div class="card-specs">
+                <div class="spec-col">
+                  <span class="spec-val">0.7321</span>
+                  <span class="spec-lbl">Test Log R²</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val">80.05%</span>
+                  <span class="spec-lbl">CQR Coverage</span>
+                </div>
+                <div class="spec-col">
+                  <span class="spec-val" id="specLuxury">Luxury</span>
+                  <span class="spec-lbl">Segment Tier</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div id="showroomView" class="hidden">
+          <div class="cards-grid" id="showroomGrid"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const DATASET = {"histogram":[0.416,0.88,1.0,0.971,0.806,0.886,0.754,0.677,0.624,0.497,0.387,0.218,0.24,0.241,0.166,0.133,0.121,0.091,0.08,0.076,0.038,0.032,0.03,0.225],"catalog":{"BMW":{"M3 Base":{"engine":"414.0HP 4.0L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2011,"milage":70900,"median_price":26000,"count":2070},"M4 Base":{"engine":"425.0HP 3.0L Straight 6 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2018,"milage":33000,"median_price":45000,"count":1554},"335 i":{"engine":"300.0HP 3.0L Straight 6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2010,"milage":92000,"median_price":13000,"count":713},"M5 Base":{"engine":"600.0HP 4.4L 8 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2018,"milage":35800,"median_price":50000,"count":682},"328 i xDrive":{"engine":"240.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2013,"milage":97700,"median_price":15000,"count":604},"M4 Competition xDrive":{"engine":"503.0HP 3.0L Straight 6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2022,"milage":12500,"median_price":68800,"count":502},"435 i":{"engine":"300.0HP 3.0L Straight 6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2014,"milage":79900,"median_price":19800,"count":446},"M6 Base":{"engine":"560.0HP 4.4L 8 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2015,"milage":38700,"median_price":44900,"count":440}},"Mercedes-Benz":{"E-Class E 350 4MATIC":{"engine":"302.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","fuel_type":"Gasoline","model_year":2014,"milage":82900,"median_price":18500,"count":1328},"E-Class E 350":{"engine":"302.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","fuel_type":"Gasoline","model_year":2014,"milage":71300,"median_price":22000,"count":1124},"AMG G 63 Base":{"engine":"563.0HP 5.5L 8 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2019,"milage":23500,"median_price":66200,"count":924},"C-Class C 300 4MATIC Sport":{"engine":"241.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2016,"milage":65200,"median_price":25900,"count":714},"C-Class C 300 4MATIC":{"engine":"255.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2019,"milage":42700,"median_price":32500,"count":660},"G-Class G 550 4MATIC":{"engine":"416.0HP 4.0L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2019,"milage":45000,"median_price":48000,"count":658},"SL-Class SL 550":{"engine":"429.0HP 4.7L 8 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","fuel_type":"Gasoline","model_year":2013,"milage":73000,"median_price":26000,"count":537},"GLS 450 Base 4MATIC":{"engine":"362.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"9-Speed A/T","fuel_type":"Gasoline","model_year":2019,"milage":34100,"median_price":43600,"count":526}},"Porsche":{"911 Carrera S":{"engine":"400.0HP 3.8L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","fuel_type":"Gasoline","model_year":2016,"milage":23200,"median_price":62500,"count":1167},"911 Carrera":{"engine":"379.0HP 3.0L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2019,"milage":22000,"median_price":61000,"count":1067},"911 Carrera 4S":{"engine":"420.0HP 3.0L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2016,"milage":31700,"median_price":50000,"count":806},"Macan S":{"engine":"340.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","fuel_type":"Gasoline","model_year":2019,"milage":36000,"median_price":42600,"count":733},"Cayenne S":{"engine":"420.0HP 3.6L V6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2014,"milage":73300,"median_price":27700,"count":374},"911 GT3":{"engine":"475.0HP 3.8L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","fuel_type":"Gasoline","model_year":2020,"milage":14900,"median_price":90800,"count":348},"911 Turbo S":{"engine":"580.0HP 3.8L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2019,"milage":15500,"median_price":108900,"count":342},"Cayman Base":{"engine":"265.0HP 2.9L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2011,"milage":74500,"median_price":20000,"count":315}},"Audi":{"Q5 2.0T Premium Plus":{"engine":"248.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":59800,"median_price":26000,"count":614},"S4 3.0T Premium Plus":{"engine":"333.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","fuel_type":"Gasoline","model_year":2015,"milage":64800,"median_price":28600,"count":595},"Q5 S line Premium Plus":{"engine":"2.0 Liter TFSI","transmission":"Automatic","fuel_type":"Hybrid","model_year":2022,"milage":14700,"median_price":40000,"count":541},"A5 2.0T Premium Plus":{"engine":"252.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2017,"milage":65000,"median_price":25000,"count":499},"A4 2.0T Premium":{"engine":"211.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2013,"milage":90800,"median_price":16000,"count":498},"A3 2.0T Premium":{"engine":"220.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2015,"milage":90400,"median_price":16000,"count":385},"A8 L 55":{"engine":"335.0HP 3.0L V6 Cylinder Engine Gasoline/Mild Electric Hybrid","transmission":"8-Speed A/T","fuel_type":"Hybrid","model_year":2019,"milage":36000,"median_price":39900,"count":355},"A5 2.0T Premium":{"engine":"211.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2015,"milage":77500,"median_price":20200,"count":293}},"Lexus":{"GX 460 Base":{"engine":"301.0HP 4.6L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":67800,"median_price":29500,"count":1092},"RX 350 Base":{"engine":"270.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2014,"milage":101800,"median_price":18500,"count":798},"GX 460 Premium":{"engine":"301.0HP 4.6L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2018,"milage":61700,"median_price":33200,"count":564},"ES 350 Base":{"engine":"272.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2014,"milage":88700,"median_price":17900,"count":540},"GX 470 Base":{"engine":"263.0HP 4.7L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2006,"milage":134000,"median_price":11800,"count":482},"LX 570 Three-Row":{"engine":"383.0HP 5.7L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2019,"milage":45000,"median_price":48000,"count":409},"IS 350 Base":{"engine":"306.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2014,"milage":90000,"median_price":19800,"count":405},"IS 250 Base":{"engine":"204.0HP 2.5L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2010,"milage":120000,"median_price":14400,"count":362}},"Ford":{"F-150 XLT":{"engine":"375.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"10-Speed A/T","fuel_type":"Gasoline","model_year":2019,"milage":52800,"median_price":36500,"count":2816},"Mustang GT Premium":{"engine":"412.0HP 5.0L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2015,"milage":60000,"median_price":26600,"count":1466},"F-150 Lariat":{"engine":"375.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"10-Speed A/T","fuel_type":"Gasoline","model_year":2019,"milage":57800,"median_price":37000,"count":1373},"Explorer XLT":{"engine":"290.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2017,"milage":82100,"median_price":24700,"count":1066},"F-250 XLT":{"engine":"385.0HP 6.2L 8 Cylinder Engine Flex Fuel Capability","transmission":"6-Speed A/T","fuel_type":"E85 Flex Fuel","model_year":2018,"milage":55000,"median_price":36700,"count":834},"F-250 Lariat":{"engine":"440.0HP 6.7L 8 Cylinder Engine Diesel Fuel","transmission":"6-Speed A/T","fuel_type":"Diesel","model_year":2018,"milage":65400,"median_price":41900,"count":810},"Expedition Limited":{"engine":"3.5L V6 24V PDI DOHC Twin Turbo","transmission":"10-Speed A/T","fuel_type":"Gasoline","model_year":2021,"milage":36700,"median_price":44800,"count":530},"Expedition Max Limited":{"engine":"375.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"10-Speed A/T","fuel_type":"Gasoline","model_year":2020,"milage":48000,"median_price":41700,"count":478}},"Chevrolet":{"Camaro 2SS":{"engine":"455.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2017,"milage":56800,"median_price":31500,"count":1665},"Corvette Base":{"engine":"400.0HP 6.0L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2006,"milage":87500,"median_price":16000,"count":1079},"Corvette Stingray w/2LT":{"engine":"490.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2022,"milage":8400,"median_price":64000,"count":1011},"Camaro 1SS":{"engine":"455.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2020,"milage":23600,"median_price":42000,"count":784},"Suburban LT":{"engine":"355.0HP 5.3L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2017,"milage":74500,"median_price":32000,"count":760},"Corvette Stingray w/3LT":{"engine":"490.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2022,"milage":9000,"median_price":63600,"count":673},"Suburban Premier":{"engine":"355.0HP 5.3L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2019,"milage":56800,"median_price":36000,"count":671},"Corvette Stingray w/1LT":{"engine":"490.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2022,"milage":9000,"median_price":62900,"count":533}},"Toyota":{"Highlander XLE":{"engine":"295.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2019,"milage":53600,"median_price":33600,"count":749},"Tundra SR5":{"engine":"381.0HP 5.7L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2018,"milage":59300,"median_price":35300,"count":487},"Land Cruiser Base":{"engine":"230.0HP 4.7L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2005,"milage":120200,"median_price":12500,"count":479},"Camry Solara SLE V6":{"engine":"225.0HP 3.3L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2007,"milage":123500,"median_price":10000,"count":331},"Sequoia Limited":{"engine":"381.0HP 5.7L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2013,"milage":97800,"median_price":19900,"count":313},"FJ Cruiser Base":{"engine":"239.0HP 4.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2007,"milage":125800,"median_price":13000,"count":312},"4Runner Limited":{"engine":"270.0HP 4.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2015,"milage":92900,"median_price":20000,"count":309},"Tacoma TRD Sport":{"engine":"3.5 Liter","transmission":"Automatic","fuel_type":"Gasoline","model_year":2019,"milage":36600,"median_price":36600,"count":248}},"Land":{"Rover Range Rover Sport HSE":{"engine":"340.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":60000,"median_price":32000,"count":999},"Rover Range Rover Sport Supercharged HSE":{"engine":"340.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2016,"milage":65000,"median_price":26500,"count":647},"Rover Range Rover 3.0L Supercharged HSE":{"engine":"380.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":60100,"median_price":32900,"count":395},"Rover Range Rover Sport HSE Dynamic":{"engine":"380.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2019,"milage":49800,"median_price":40000,"count":325},"Rover Range Rover Sport Supercharged":{"engine":"510.0HP 5.0L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2013,"milage":85500,"median_price":19500,"count":308},"Rover Range Rover P530 SE LWB 7 Seat":{"engine":"523.0HP 4.4L 8 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2023,"milage":3400,"median_price":84000,"count":299},"Rover Range Rover Sport 3.0L Supercharged HSE":{"engine":"340.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":55000,"median_price":34000,"count":265},"Rover Range Rover Evoque SE Premium":{"engine":"240.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"9-Speed A/T","fuel_type":"Gasoline","model_year":2017,"milage":59000,"median_price":25700,"count":261}},"Tesla":{"Model Y Long Range":{"engine":"425.0HP Electric Motor Electric Fuel System","transmission":"A/T","fuel_type":"Gasoline","model_year":2021,"milage":20800,"median_price":47000,"count":772},"Model Y Performance":{"engine":"455.0HP Electric Motor Electric Fuel System","transmission":"1-Speed A/T","fuel_type":"Gasoline","model_year":2021,"milage":23100,"median_price":47000,"count":471},"Model 3 Long Range":{"engine":"271.0HP Electric Motor Electric Fuel System","transmission":"A/T","fuel_type":"Gasoline","model_year":2020,"milage":28000,"median_price":35000,"count":374},"Model X Long Range Plus":{"engine":"518.0HP Electric Motor Electric Fuel System","transmission":"A/T","fuel_type":"Gasoline","model_year":2021,"milage":25300,"median_price":62000,"count":339},"Model X 75D":{"engine":"518.0HP Electric Motor Electric Fuel System","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":48500,"median_price":53000,"count":271},"Model X Long Range":{"engine":"670.0HP Electric Motor Electric Fuel System","transmission":"A/T","fuel_type":"Gasoline","model_year":2022,"milage":13500,"median_price":69000,"count":215},"Model S P100D":{"engine":"518.0HP Electric Motor Electric Fuel System","transmission":"A/T","fuel_type":"Gasoline","model_year":2018,"milage":47000,"median_price":43000,"count":191},"Model S 100D":{"engine":"518.0HP Electric Motor Electric Fuel System","transmission":"A/T","fuel_type":"Gasoline","model_year":2018,"milage":49300,"median_price":41000,"count":191}},"Jeep":{"Wrangler Sport":{"engine":"285.0HP 3.6L V6 Cylinder Engine Gasoline Fuel","transmission":"5-Speed M/T","fuel_type":"Gasoline","model_year":2010,"milage":92800,"median_price":17000,"count":966},"Gladiator Overland":{"engine":"285.0HP 3.6L V6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2020,"milage":23100,"median_price":43400,"count":614},"Grand Cherokee L Limited":{"engine":"3.6L V6 24V MPFI DOHC","transmission":"8-Speed Automatic","fuel_type":"Gasoline","model_year":2021,"milage":26000,"median_price":40400,"count":424},"Wrangler Sahara":{"engine":"202.0HP 3.8L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2009,"milage":120500,"median_price":14000,"count":356},"Gladiator Rubicon":{"engine":"285.0HP 3.6L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2022,"milage":20600,"median_price":46500,"count":342},"Wrangler Unlimited Sahara":{"engine":"2.0L I4 16V GDI DOHC Turbo","transmission":"8-Speed Automatic","fuel_type":"Gasoline","model_year":2019,"milage":47600,"median_price":32400,"count":317},"Liberty Sport":{"engine":"210.0HP 3.7L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2007,"milage":135200,"median_price":8500,"count":272},"Grand Cherokee Limited":{"engine":"3.6L V6 24V MPFI DOHC","transmission":"8-Speed Automatic","fuel_type":"Gasoline","model_year":2018,"milage":54200,"median_price":31000,"count":251}},"Nissan":{"GT-R Premium":{"engine":"565.0HP 3.8L V6 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2017,"milage":37800,"median_price":43000,"count":215},"Frontier SV":{"engine":"261.0HP 4.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2012,"milage":100800,"median_price":15700,"count":204},"Pathfinder SL":{"engine":"260.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2015,"milage":106500,"median_price":16100,"count":196},"Armada Platinum":{"engine":"390.0HP 5.6L 8 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2018,"milage":60000,"median_price":30000,"count":191},"Xterra S":{"engine":"261.0HP 4.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2010,"milage":100700,"median_price":13500,"count":183},"Rogue SL":{"engine":"170.0HP 2.5L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":79600,"median_price":20000,"count":159},"350Z Touring":{"engine":"306.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2008,"milage":106000,"median_price":13500,"count":156},"Murano SL":{"engine":"240.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2008,"milage":118500,"median_price":12500,"count":151}},"Honda":{"Pilot EX-L":{"engine":"280.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2016,"milage":88000,"median_price":20300,"count":284},"Civic EX":{"engine":"140.0HP 1.8L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2009,"milage":120000,"median_price":10900,"count":251},"S2000 Base":{"engine":"240.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2003,"milage":99600,"median_price":13900,"count":195},"Civic LX":{"engine":"158.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2014,"milage":104900,"median_price":14400,"count":188},"Element EX":{"engine":"166.0HP 2.4L 4 Cylinder Engine Gasoline Fuel","transmission":"5-Speed A/T","fuel_type":"Gasoline","model_year":2008,"milage":138500,"median_price":9500,"count":120},"Civic Sport":{"engine":"2.0L I4 16V MPFI DOHC","transmission":"Automatic CVT","fuel_type":"Gasoline","model_year":2020,"milage":42800,"median_price":28900,"count":102},"CR-V EX":{"engine":"160.0HP 2.4L 4 Cylinder Engine Gasoline Fuel","transmission":"M/T","fuel_type":"Gasoline","model_year":2004,"milage":149000,"median_price":9000,"count":93},"Ridgeline RTL-E":{"engine":"280.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed Automatic","fuel_type":"Gasoline","model_year":2019,"milage":38000,"median_price":31900,"count":73}},"Hyundai":{"Genesis Coupe 3.8 Track":{"engine":"306.0HP 3.8L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","fuel_type":"Gasoline","model_year":2011,"milage":90000,"median_price":14400,"count":260},"Genesis 3.8":{"engine":"311.0HP 3.8L V6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2015,"milage":86500,"median_price":21000,"count":139},"Tucson Limited":{"engine":"173.0HP 2.7L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2017,"milage":68200,"median_price":20800,"count":115},"Santa Fe SE":{"engine":"2.5L I4 16V PDI DOHC","transmission":"8-Speed Automatic","fuel_type":"Gasoline","model_year":2021,"milage":35600,"median_price":30300,"count":110},"Genesis Coupe 3.8 Base":{"engine":"348.0HP 3.8L V6 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","fuel_type":"Gasoline","model_year":2015,"milage":60000,"median_price":19000,"count":105},"Sonata SE":{"engine":"185.0HP 2.4L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2016,"milage":74000,"median_price":16000,"count":99},"Santa Fe SEL":{"engine":"2.5L I4 16V PDI DOHC","transmission":"8-Speed Automatic","fuel_type":"Gasoline","model_year":2021,"milage":26500,"median_price":35300,"count":93},"Tucson SE":{"engine":"173.0HP 2.7L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2010,"milage":121400,"median_price":10900,"count":90}},"Cadillac":{"Escalade ESV Platinum":{"engine":"420.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","fuel_type":"Gasoline","model_year":2018,"milage":57500,"median_price":37500,"count":542},"Escalade ESV Luxury":{"engine":"420.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2016,"milage":74200,"median_price":31800,"count":394},"Escalade ESV Sport":{"engine":"420.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"10-Speed A/T","fuel_type":"Gasoline","model_year":2021,"milage":33000,"median_price":52000,"count":386},"CTS 2.0L Turbo Luxury":{"engine":"265.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2016,"milage":70500,"median_price":21000,"count":245},"Escalade Premium Luxury Platinum":{"engine":"420.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"10-Speed A/T","fuel_type":"Gasoline","model_year":2021,"milage":31500,"median_price":55600,"count":234},"Escalade Sport Platinum":{"engine":"420.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"10-Speed A/T","fuel_type":"Gasoline","model_year":2021,"milage":28100,"median_price":59500,"count":209},"XTS Luxury":{"engine":"304.0HP 3.6L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2018,"milage":66200,"median_price":25000,"count":156},"CTS Luxury":{"engine":"270.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2012,"milage":106000,"median_price":14200,"count":144}},"RAM":{"1500 Laramie":{"engine":"5.7L V8 16V MPFI OHV","transmission":"8-Speed Automatic","fuel_type":"Gasoline","model_year":2021,"milage":18500,"median_price":43900,"count":1137},"1500 Big Horn":{"engine":"5.7L V8 16V MPFI OHV","transmission":"8-Speed Automatic","fuel_type":"Gasoline","model_year":2021,"milage":31700,"median_price":40500,"count":623},"1500 Rebel":{"engine":"395.0HP 5.7L 8 Cylinder Engine Gasoline/Mild Electric Hybrid","transmission":"8-Speed A/T","fuel_type":"Hybrid","model_year":2020,"milage":46400,"median_price":40000,"count":318},"1500 Limited":{"engine":"395.0HP 5.7L 8 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","fuel_type":"Gasoline","model_year":2020,"milage":42700,"median_price":42500,"count":278},"2500 Big Horn":{"engine":"410.0HP 6.4L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2017,"milage":75500,"median_price":33700,"count":218},"2500 Tradesman":{"engine":"410.0HP 6.4L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2018,"milage":53600,"median_price":43000,"count":173},"2500 Laramie":{"engine":"350.0HP 6.7L Straight 6 Cylinder Engine Diesel Fuel","transmission":"6-Speed A/T","fuel_type":"Diesel","model_year":2017,"milage":73000,"median_price":36800,"count":153},"ProMaster 2500 High Roof":{"engine":"280.0HP 3.6L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","fuel_type":"Gasoline","model_year":2018,"milage":72400,"median_price":27900,"count":128}}},"showroom":[{"brand":"BMW","model":"M3 Base","model_year":2011,"milage":70900,"fuel_type":"Gasoline","engine":"414.0HP 4.0L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":26000,"hp":414,"disp":"4.0L"},{"brand":"BMW","model":"M4 Base","model_year":2018,"milage":33000,"fuel_type":"Gasoline","engine":"425.0HP 3.0L Straight 6 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":45000,"hp":425,"disp":"3.0L"},{"brand":"Mercedes-Benz","model":"E-Class E 350 4MATIC","model_year":2014,"milage":82900,"fuel_type":"Gasoline","engine":"302.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":18500,"hp":302,"disp":"3.5L"},{"brand":"Mercedes-Benz","model":"E-Class E 350","model_year":2014,"milage":71300,"fuel_type":"Gasoline","engine":"302.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":22000,"hp":302,"disp":"3.5L"},{"brand":"Porsche","model":"911 Carrera S","model_year":2016,"milage":23200,"fuel_type":"Gasoline","engine":"400.0HP 3.8L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"7-Speed A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":62500,"hp":400,"disp":"3.8L"},{"brand":"Porsche","model":"911 Carrera","model_year":2019,"milage":22000,"fuel_type":"Gasoline","engine":"379.0HP 3.0L Flat 6 Cylinder Engine Gasoline Fuel","transmission":"8-Speed A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":61000,"hp":379,"disp":"3.0L"},{"brand":"Audi","model":"Q5 2.0T Premium Plus","model_year":2017,"milage":59800,"fuel_type":"Gasoline","engine":"248.0HP 2.0L 4 Cylinder Engine Gasoline Fuel","transmission":"A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":26000,"hp":248,"disp":"2.0L"},{"brand":"Lexus","model":"GX 460 Base","model_year":2017,"milage":67800,"fuel_type":"Gasoline","engine":"301.0HP 4.6L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":29500,"hp":301,"disp":"4.6L"},{"brand":"Lexus","model":"RX 350 Base","model_year":2014,"milage":101800,"fuel_type":"Gasoline","engine":"270.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":18500,"hp":270,"disp":"3.5L"},{"brand":"Ford","model":"F-150 XLT","model_year":2019,"milage":52800,"fuel_type":"Gasoline","engine":"375.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"10-Speed A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":36500,"hp":375,"disp":"3.5L"},{"brand":"Chevrolet","model":"Camaro 2SS","model_year":2017,"milage":56800,"fuel_type":"Gasoline","engine":"455.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":31500,"hp":455,"disp":"6.2L"},{"brand":"Toyota","model":"Highlander XLE","model_year":2019,"milage":53600,"fuel_type":"Gasoline","engine":"295.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":33600,"hp":295,"disp":"3.5L"},{"brand":"Land","model":"Rover Range Rover Sport HSE","model_year":2017,"milage":60000,"fuel_type":"Gasoline","engine":"340.0HP 3.0L V6 Cylinder Engine Gasoline Fuel","transmission":"A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":32000,"hp":340,"disp":"3.0L"},{"brand":"Tesla","model":"Model Y Long Range","model_year":2021,"milage":20800,"fuel_type":"Gasoline","engine":"425.0HP Electric Motor Electric Fuel System","transmission":"A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":47000,"hp":425,"disp":"Electric"},{"brand":"Jeep","model":"Wrangler Sport","model_year":2010,"milage":92800,"fuel_type":"Gasoline","engine":"285.0HP 3.6L V6 Cylinder Engine Gasoline Fuel","transmission":"5-Speed M/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":17000,"hp":285,"disp":"3.6L"},{"brand":"Nissan","model":"GT-R Premium","model_year":2017,"milage":37800,"fuel_type":"Gasoline","engine":"565.0HP 3.8L V6 Cylinder Engine Gasoline Fuel","transmission":"Transmission w/Dual Shift Mode","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":43000,"hp":565,"disp":"3.8L"},{"brand":"Honda","model":"Pilot EX-L","model_year":2016,"milage":88000,"fuel_type":"Gasoline","engine":"280.0HP 3.5L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":20300,"hp":280,"disp":"3.5L"},{"brand":"Hyundai","model":"Genesis Coupe 3.8 Track","model_year":2011,"milage":90000,"fuel_type":"Gasoline","engine":"306.0HP 3.8L V6 Cylinder Engine Gasoline Fuel","transmission":"6-Speed M/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":14400,"hp":306,"disp":"3.8L"},{"brand":"Cadillac","model":"Escalade ESV Platinum","model_year":2018,"milage":57500,"fuel_type":"Gasoline","engine":"420.0HP 6.2L 8 Cylinder Engine Gasoline Fuel","transmission":"A/T","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":37500,"hp":420,"disp":"6.2L"},{"brand":"RAM","model":"1500 Laramie","model_year":2021,"milage":18500,"fuel_type":"Gasoline","engine":"5.7L V8 16V MPFI OHV","transmission":"8-Speed Automatic","ext_col":"Black","int_col":"Black","accident":"None reported","clean_title":"Yes","price":43900,"hp":280,"disp":"5.7L"}],"total_listings":179957};
+
+    const COLOR_PALETTES = {
+      Green:  { body: "#1E7F5C", dark: "#0E4A35", light: "#4AB990", accent: "#A7F3D0" },
+      Black:  { body: "#262930", dark: "#111317", light: "#4B505C", accent: "#9CA3AF" },
+      White:  { body: "#EEF0F4", dark: "#C8CDD6", light: "#FFFFFF", accent: "#E5E7EB" },
+      Gray:   { body: "#646B75", dark: "#3D424A", light: "#949CA8", accent: "#D1D5DB" },
+      Silver: { body: "#A9B2BE", dark: "#727B87", light: "#D7DDE6", accent: "#F3F4F6" },
+      Blue:   { body: "#1E4FA8", dark: "#102D66", light: "#4D82DF", accent: "#BFDBFE" },
+      Red:    { body: "#B91C1C", dark: "#741010", light: "#E04848", accent: "#FECACA" }
+    };
+
+    // Build full 128-car browseable showroom inventory from DATASET.catalog
+    const FULL_INVENTORY = [];
+    Object.entries(DATASET.catalog).forEach(([brand, models]) => {
+      Object.entries(models).forEach(([model, info]) => {
+        const eng = String(info.engine || '');
+        const isEV = /electric/i.test(eng) && !/hybrid/i.test(eng);
+        const fuel = isEV ? 'Missing' : (info.fuel_type || 'Gasoline');
+        const hpM = eng.match(/(\d+\.?\d*)HP/i);
+        const dispM = eng.match(/(\d+\.?\d*)\s*L/i);
+        FULL_INVENTORY.push({
+          brand,
+          model,
+          model_year: info.model_year,
+          milage: info.milage,
+          fuel_type: fuel,
+          engine: eng,
+          transmission: info.transmission,
+          price: info.median_price,
+          hp: hpM ? Math.round(parseFloat(hpM[1])) : 280,
+          disp: isEV ? 'Electric' : (dispM ? dispM[1] + 'L' : '3.0L')
+        });
+      });
+    });
+
+    const state = {
+      view: 'valuation',
+      brand: 'Lexus',
+      model: 'RX 350 Base',
+      fuel_type: 'Gasoline',
+      showroomBrand: null,   // null = all brands in Cars tab; string = filter to that brand
+      showroomFuel: 'All',   // 'All' = all fuels in Cars tab
+      ext_col: 'Green',
+      clean_title: 'Yes',
+      accident: 'None reported',
+      asking_price: 26500,
+      priceMode: 'mean',
+      apiLive: false,
+      searchQuery: '',
+      lastResponse: null
+    };
+
+    let debounceTimer = null;
+
+    function fmtUSD(v) {
+      return '$' + Math.round(Number(v) || 0).toLocaleString('en-US');
+    }
+
+    function detectBodyType(brand, model) {
+      const m = (brand + ' ' + model).toLowerCase();
+      if (/f-150|f-250|silverado|1500|2500|ram|tundra|tacoma|sierra|gladiator|ranger|frontier/.test(m)) return 'truck';
+      if (/911|m2|m3|m4|corvette|camaro|mustang|challenger|charger|gt-r|cayman|boxster|370z|amg gt|r8/.test(m)) return 'coupe';
+      if (/rx|gx|x5|x3|x7|gle|glc|g-class|q5|q7|q8|cayenne|macan|rover|wrangler|grand cherokee|escalade|tahoe|yukon|explorer|bronco|expedition|highlander|4runner|rav4|model y|model x|xc90|suburban/.test(m)) return 'suv';
+      return 'sedan';
+    }
+
+    function renderCarSVG(type, colorName) {
+      const c = COLOR_PALETTES[colorName] || COLOR_PALETTES.Green;
+      const uid = 'grad_' + type + '_' + Math.random().toString(36).slice(2, 7);
+      const shapes = {
+        suv: `<path d="M46 122 L54 90 Q60 72 82 68 L138 64 L172 34 Q186 24 214 24 L318 26 Q344 27 360 50 L376 74 L388 84 Q396 90 396 106 L392 124 L362 124 Q360 94 330 94 Q300 94 298 124 L144 124 Q142 94 112 94 Q82 94 80 124 Z" fill="url(#${uid})"/><path d="M150 64 L178 38 Q188 32 212 32 L254 32 L254 66 Z" fill="#1F2937" opacity="0.88"/><path d="M262 32 L314 33 Q334 34 348 52 L356 66 L262 66 Z" fill="#1F2937" opacity="0.88"/>`,
+        coupe: `<path d="M36 122 L46 96 Q54 80 86 74 L148 68 L194 40 Q212 30 246 30 L306 32 Q334 34 362 64 L392 78 Q402 84 400 104 L394 124 L362 124 Q360 95 330 95 Q300 95 298 124 L144 124 Q142 95 112 95 Q82 95 80 124 Z" fill="url(#${uid})"/><path d="M164 68 L200 44 Q216 36 248 36 L296 38 Q322 40 344 64 L346 68 Z" fill="#1F2937" opacity="0.9"/>`,
+        truck: `<path d="M38 122 L44 82 Q48 70 68 68 L132 66 L158 32 Q168 24 190 24 L268 24 L272 68 L386 68 Q396 68 396 80 L394 124 L360 124 Q358 92 328 92 Q298 92 296 124 L142 124 Q140 92 110 92 Q80 92 78 124 Z" fill="url(#${uid})"/><path d="M144 66 L166 35 Q172 31 190 31 L258 31 L260 66 Z" fill="#1F2937" opacity="0.88"/>`,
+        sedan: `<path d="M38 122 L46 92 Q54 76 84 72 L142 66 L184 36 Q200 28 232 28 L306 30 Q332 32 356 66 L390 76 Q398 82 398 104 L394 124 L362 124 Q360 95 330 95 Q300 95 298 124 L144 124 Q142 95 112 95 Q82 95 80 124 Z" fill="url(#${uid})"/><path d="M156 66 L190 40 Q204 34 232 34 L256 34 L256 66 Z" fill="#1F2937" opacity="0.88"/><path d="M264 34 L302 36 Q324 38 342 66 L264 66 Z" fill="#1F2937" opacity="0.88"/>`
+      };
+      return `
+        <svg class="car-svg" viewBox="0 0 430 162" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="${uid}" x1="40" y1="24" x2="395" y2="128" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="${c.light}"/>
+              <stop offset="45%" stop-color="${c.body}"/>
+              <stop offset="100%" stop-color="${c.dark}"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="218" cy="144" rx="172" ry="10" fill="rgba(17,19,23,0.14)"/>
+          ${shapes[type] || shapes.sedan}
+          <circle cx="112" cy="124" r="24" fill="#14161A"/><circle cx="112" cy="124" r="14" fill="#D5DAE2"/><circle cx="112" cy="124" r="6" fill="#2A2E37"/>
+          <circle cx="330" cy="124" r="24" fill="#14161A"/><circle cx="330" cy="124" r="14" fill="#D5DAE2"/><circle cx="330" cy="124" r="6" fill="#2A2E37"/>
+        </svg>
+      `;
+    }
+
+    function resolveWikipediaTitle(brand, model) {
+      const b = String(brand || '').trim();
+      const m = String(model || '').trim();
+      const ml = m.toLowerCase();
+
+      // Exact disambiguation for tricky models (prevents RAM memory sticks, 1930s BMWs, HQ buildings)
+      if (b === 'RAM') {
+        if (ml.includes('promaster')) return 'Ram ProMaster';
+        return 'Ram pickup';
+      }
+      if (b === 'Land') {
+        if (ml.includes('evoque')) return 'Range Rover Evoque';
+        if (ml.includes('sport')) return 'Range Rover Sport';
+        return 'Range Rover';
+      }
+      if (b === 'BMW') {
+        if (/^(328|335)\b/.test(ml)) return 'BMW 3 Series (F30)';
+        if (/^435\b/.test(ml)) return 'BMW 4 Series';
+        if (/^m3\b/.test(ml)) return 'BMW M3';
+        if (/^m4\b/.test(ml)) return 'BMW M4';
+        if (/^m5\b/.test(ml)) return 'BMW M5';
+        if (/^m6\b/.test(ml)) return 'BMW M6';
+      }
+      if (b === 'Mercedes-Benz') {
+        if (ml.includes('e-class')) return 'Mercedes-Benz E-Class';
+        if (ml.includes('c-class')) return 'Mercedes-Benz C-Class';
+        if (ml.includes('g 63') || ml.includes('g-class')) return 'Mercedes-Benz G-Class';
+        if (ml.includes('sl-class')) return 'Mercedes-Benz SL-Class';
+        if (ml.includes('gls')) return 'Mercedes-Benz GLS';
+      }
+      if (b === 'Toyota') {
+        if (ml.includes('land cruiser')) return 'Toyota Land Cruiser';
+        if (ml.includes('fj cruiser')) return 'Toyota FJ Cruiser';
+        if (ml.includes('camry solara')) return 'Toyota Camry Solara';
+        if (ml.includes('4runner')) return 'Toyota 4Runner';
+      }
+      if (b === 'Tesla') {
+        if (ml.includes('model y')) return 'Tesla Model Y';
+        if (ml.includes('model 3')) return 'Tesla Model 3';
+        if (ml.includes('model x')) return 'Tesla Model X';
+        if (ml.includes('model s')) return 'Tesla Model S';
+      }
+      if (b === 'Jeep') {
+        if (ml.includes('grand cherokee')) return 'Jeep Grand Cherokee';
+        if (ml.includes('gladiator')) return 'Jeep Gladiator (JT)';
+        if (ml.includes('wrangler')) return 'Jeep Wrangler';
+        if (ml.includes('liberty')) return 'Jeep Liberty';
+      }
+      if (b === 'Hyundai') {
+        if (ml.includes('genesis coupe')) return 'Hyundai Genesis Coupe';
+        if (ml.includes('santa fe')) return 'Hyundai Santa Fe';
+      }
+      if (b === 'Chevrolet') {
+        if (ml.includes('stingray')) return 'Chevrolet Corvette (C8)';
+        if (ml.includes('corvette')) return 'Chevrolet Corvette (C6)';
+      }
+      if (b === 'Porsche') {
+        if (ml.includes('gt3')) return 'Porsche 911 GT3';
+        if (ml.includes('911')) return 'Porsche 911';
+        if (ml.includes('cayman')) return 'Porsche Boxster and Cayman';
+      }
+      if (b === 'Ford') {
+        if (ml.includes('f-150')) return 'Ford F-Series';
+        if (ml.includes('f-250')) return 'Ford Super Duty';
+      }
+      if (b === 'Cadillac') {
+        if (ml.includes('escalade')) return 'Cadillac Escalade';
+        if (ml.includes('cts')) return 'Cadillac CTS';
+        if (ml.includes('xts')) return 'Cadillac XTS';
+      }
+      if (b === 'Honda') {
+        if (ml.includes('s2000')) return 'Honda S2000';
+        if (ml.includes('cr-v')) return 'Honda CR-V';
+      }
+      if (b === 'Nissan') {
+        if (ml.includes('gt-r')) return 'Nissan GT-R';
+        if (ml.includes('350z')) return 'Nissan 350Z';
+      }
+
+      const family = m.split(' ')[0] || '';
+      return `${b} ${family}`.trim();
+    }
+
+    async function fetchWikipediaSummaryImage(title) {
+      const cacheKey = 'carzone_wp_v2_' + title.toLowerCase();
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached !== null) return cached || '';
+      } catch (_) {}
+
+      try {
+        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          try { sessionStorage.setItem(cacheKey, ''); } catch (_) {}
+          return '';
+        }
+        const data = await resp.json();
+        // Reject disambiguation pages or non-vehicle articles
+        if (data?.type === 'disambiguation') {
+          try { sessionStorage.setItem(cacheKey, ''); } catch (_) {}
+          return '';
+        }
+        const thumb = data?.thumbnail?.source || '';
+        try { sessionStorage.setItem(cacheKey, thumb); } catch (_) {}
+        return thumb;
+      } catch (_) {
+        return '';
+      }
+    }
+
+    async function fetchWikimediaPhoto(brand, model, bodyType) {
+      const dispBrand = brand === 'Land' ? 'Land Rover' : brand;
+      const canonicalTitle = resolveWikipediaTitle(brand, model);
+
+      // 1. Curated Wikipedia vehicle article lead photo (never falls back to bare brand name)
+      const wpImg = await fetchWikipediaSummaryImage(canonicalTitle);
+      if (wpImg && !/logo|flag|coat_of_arms|headquarters|building/i.test(wpImg)) {
+        return wpImg;
+      }
+
+      // 2. Targeted Wikimedia Commons search with "automobile" context
+      const family = String(model || '').split(' ')[0] || '';
+      const q = `${dispBrand} ${family} automobile`;
+      const cacheKey = 'carzone_wc_v4_' + q.toLowerCase();
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached !== null) return cached || '';
+      } catch (_) {}
+
+      try {
+        const endpoint =
+          'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6' +
+          `&gsrsearch=${encodeURIComponent(q)}&gsrlimit=8&prop=imageinfo&iiprop=url&iiurlwidth=640&format=json&origin=*`;
+        const resp = await fetch(endpoint);
+        if (!resp.ok) return '';
+        const json = await resp.json();
+        const pages = json?.query?.pages ? Object.values(json.query.pages) : [];
+
+        const match = pages.find(p => {
+          const info = p?.imageinfo?.[0];
+          const url = info?.thumburl || info?.url || '';
+          const title = (p?.title || '').toLowerCase();
+          return (
+            /\.(jpe?g|png|webp)(\?|$)/i.test(url) &&
+            !/logo|icon|badge|diagram|interior|engine|key|map|coat_of_arms|flag|building|headquarters|memory|dimm/i.test(title)
+          );
+        });
+
+        let foundUrl = match?.imageinfo?.[0]?.thumburl || match?.imageinfo?.[0]?.url || '';
+        if (!foundUrl && match?.title) {
+          const cleanTitle = match.title.replace(/^File:/i, '').replace(/ /g, '_');
+          foundUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(cleanTitle)}?width=640`;
+        }
+
+        try { sessionStorage.setItem(cacheKey, foundUrl); } catch (_) {}
+        return foundUrl;
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function hydrateLiveCarPhotos() {
+      const imgs = document.querySelectorAll('img.car-photo[data-brand][data-model]');
+      imgs.forEach(async (img, idx) => {
+        if (img.dataset.hydrated === '1') return;
+        img.dataset.hydrated = '1';
+        // Slight stagger so concurrent card grids don't burst-throttle
+        if (idx > 0) await new Promise(r => setTimeout(r, idx * 75));
+        const photoUrl = await fetchWikimediaPhoto(img.dataset.brand, img.dataset.model, img.dataset.body || 'sedan');
+        if (photoUrl && img.isConnected) {
+          img.onerror = function() {
+            const type = this.dataset.body || 'sedan';
+            const colorName = this.dataset.color || 'Green';
+            this.parentElement.innerHTML = renderCarSVG(type, colorName);
+          };
+          img.src = photoUrl;
+        } else if (img.isConnected) {
+          const type = img.dataset.body || 'sedan';
+          const colorName = img.dataset.color || 'Green';
+          img.parentElement.innerHTML = renderCarSVG(type, colorName);
+        }
+      });
+    }
+
+    function renderCarVisual(brand, model, type, colorName) {
+      setTimeout(hydrateLiveCarPhotos, 15);
+      // Start with crisp SVG immediately, then upgrade to real photo once fetched
+      return `
+        <div style="display:flex;align-items:center;justify-content:center;width:100%;">
+          ${renderCarSVG(type, colorName)}
+          <img class="car-photo hidden" data-brand="${brand.replace(/"/g, '&quot;')}" data-model="${model.replace(/"/g, '&quot;')}" data-body="${type}" data-color="${colorName}" alt="${brand} ${model}" onload="this.classList.remove('hidden'); if(this.previousElementSibling) this.previousElementSibling.remove();" />
+        </div>
+      `;
+    }
+
+    function renderHistogram() {
+      const wrap = document.getElementById('priceHistogram');
+      const ask = Number(document.getElementById('askingSlider').value);
+      const maxPrice = 120000;
+      const bars = DATASET.histogram;
+      wrap.innerHTML = bars.map((h, i) => {
+        const binPrice = 2000 + (i / bars.length) * (maxPrice - 2000);
+        const inRange = binPrice <= ask;
+        const px = Math.max(4, Math.round(h * 34));
+        return `<div class="hist-bar ${inRange ? 'in-range' : ''}" style="height:${px}px" title="~$${Math.round(binPrice).toLocaleString()}"></div>`;
+      }).join('');
+    }
+
+    function renderBrandList(filterText = '') {
+      const list = document.getElementById('brandList');
+      const brands = Object.keys(DATASET.catalog).filter(b =>
+        b.toLowerCase().includes(filterText.toLowerCase()) ||
+        Object.keys(DATASET.catalog[b]).some(m => m.toLowerCase().includes(filterText.toLowerCase()))
+      );
+      list.innerHTML = brands.map(b => {
+        const active = state.view === 'showroom' ? (b === state.showroomBrand) : (b === state.brand);
+        const total = Object.values(DATASET.catalog[b]).reduce((a, v) => a + v.count, 0);
+        return `
+          <div class="brand-item ${active ? 'active' : ''}" onclick="selectBrand('${b.replace(/'/g, "\\'")}')">
+            <span class="brand-left">
+              <span class="check-box">
+                ${active ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+              </span>
+              <span>${b === 'Land' ? 'Land Rover' : b}</span>
+            </span>
+            <span class="brand-count">${total.toLocaleString()}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function populateModels(brand, preferredModel = null) {
+      const sel = document.getElementById('modelSelect');
+      const modelsObj = DATASET.catalog[brand] || {};
+      const models = Object.keys(modelsObj);
+      sel.innerHTML = models.map(m => `<option value="${m.replace(/"/g, '&quot;')}">${m}</option>`).join('');
+      if (preferredModel && models.includes(preferredModel)) {
+        sel.value = preferredModel;
+      } else if (models.length > 0) {
+        sel.value = models[0];
+      }
+      state.model = sel.value;
+      renderComparables();
+    }
+
+    function applyModelDefaults(brand, model) {
+      const info = (DATASET.catalog[brand] || {})[model];
+      if (!info) return;
+      document.getElementById('engineInput').value = info.engine;
+      document.getElementById('yearInput').value = info.model_year;
+      document.getElementById('milageInput').value = info.milage;
+
+      const transSel = document.getElementById('transSelect');
+      if (![...transSel.options].some(o => o.value === info.transmission)) {
+        const opt = document.createElement('option');
+        opt.value = info.transmission;
+        opt.textContent = info.transmission;
+        transSel.appendChild(opt);
+      }
+      transSel.value = info.transmission;
+
+      const validFuels = ['Gasoline', 'Diesel', 'Plug-In Hybrid', 'Hybrid', 'E85 Flex Fuel', 'Missing'];
+      const targetFuel = validFuels.includes(info.fuel_type) ? info.fuel_type : 'Gasoline';
+      setFuelUI(targetFuel);
+
+      const askPrice = Math.min(120000, Math.max(3000, info.median_price));
+      syncAsking(askPrice, false);
+    }
+
+    function selectBrand(brand) {
+      if (state.view === 'showroom') {
+        // Toggle brand filter in Cars view (click again to show all brands)
+        state.showroomBrand = (state.showroomBrand === brand) ? null : brand;
+        state.brand = brand;
+        renderBrandList(state.searchQuery);
+        renderShowroom();
+        return;
+      }
+      state.brand = brand;
+      state.showroomBrand = brand;
+      renderBrandList(state.searchQuery);
+      populateModels(brand);
+      applyModelDefaults(brand, state.model);
+      runValuation();
+    }
+
+    function onModelChange() {
+      state.model = document.getElementById('modelSelect').value;
+      applyModelDefaults(state.brand, state.model);
+      runValuation();
+    }
+
+    function setFuelUI(fuel) {
+      state.fuel_type = fuel;
+      document.querySelectorAll('#fuelPills .pill-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.fuel === fuel);
+      });
+    }
+
+    function selectFuel(fuel) {
+      state.showroomFuel = fuel;
+      if (fuel !== 'All') {
+        state.fuel_type = fuel;
+      }
+      document.querySelectorAll('#fuelPills .pill-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.fuel === fuel);
+      });
+      if (state.view === 'showroom') {
+        renderShowroom();
+      } else {
+        runValuation();
+      }
+    }
+
+    function selectColor(color) {
+      state.ext_col = color;
+      document.getElementById('colorLabel').textContent = color;
+      document.querySelectorAll('#colorSwatches .color-swatch').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.color === color);
+      });
+      updateHeroArtwork();
+      schedulePredict();
+    }
+
+    function toggleHistory(field) {
+      if (field === 'clean_title') {
+        state.clean_title = state.clean_title === 'Yes' ? 'Missing' : 'Yes';
+        document.getElementById('toggleCleanTitle').classList.toggle('active', state.clean_title === 'Yes');
+      } else {
+        state.accident = state.accident === 'None reported' ? 'At least 1 accident or damage reported' : 'None reported';
+        document.getElementById('toggleNoAccident').classList.toggle('active', state.accident === 'None reported');
+      }
+      runValuation();
+    }
+
+    function syncAsking(val, triggerPredict = true) {
+      const n = Math.max(1000, Number(val) || 26500);
+      state.asking_price = n;
+      document.getElementById('askingSlider').value = Math.min(120000, Math.max(3000, n));
+      document.getElementById('askingInput').value = n;
+      document.getElementById('askingLabel').textContent = fmtUSD(n);
+      renderHistogram();
+      if (state.view === 'showroom') renderShowroom();
+      if (triggerPredict) schedulePredict();
+    }
+
+    function syncAskingFromInput(val) {
+      const n = Number(val);
+      if (!isNaN(n) && n >= 1000) {
+        state.asking_price = n;
+        document.getElementById('askingSlider').value = Math.min(120000, Math.max(3000, n));
+        document.getElementById('askingLabel').textContent = fmtUSD(n);
+        renderHistogram();
+        schedulePredict();
+      }
+    }
+
+    function handleSearch(q) {
+      state.searchQuery = q.trim();
+      renderBrandList(state.searchQuery);
+      if (state.view === 'showroom') renderShowroom();
+    }
+
+    function togglePriceMode() {
+      state.priceMode = state.priceMode === 'mean' ? 'median' : 'mean';
+      document.getElementById('priceModeLabel').textContent =
+        state.priceMode === 'mean' ? 'Expected Mean' : 'Median View';
+      if (state.lastResponse) renderValuationUI(state.lastResponse);
+    }
+
+    function switchView(view) {
+      state.view = view;
+      document.getElementById('valuationView').classList.toggle('hidden', view !== 'valuation');
+      document.getElementById('showroomView').classList.toggle('hidden', view !== 'showroom');
+      document.getElementById('tabValuation').classList.toggle('active', view === 'valuation');
+      document.getElementById('tabShowroom').classList.toggle('active', view === 'showroom');
+      document.getElementById('btnGridView').classList.toggle('active', view === 'valuation');
+      document.getElementById('btnShowroomView').classList.toggle('active', view === 'showroom');
+
+      renderBrandList(state.searchQuery);
+      if (view === 'showroom') {
+        document.querySelectorAll('#fuelPills .pill-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.fuel === state.showroomFuel);
+        });
+        renderShowroom();
+      } else {
+        setFuelUI(state.fuel_type);
+        document.getElementById('panelHeading').innerHTML = `AI Valuation <span>(${DATASET.total_listings.toLocaleString()})</span>`;
+      }
+    }
+
+    function updateHeroArtwork() {
+      const type = detectBodyType(state.brand, state.model);
+      document.getElementById('heroCarStage').innerHTML = renderCarVisual(state.brand, state.model, type, state.ext_col);
+      const shortCode = state.model.split(' ').slice(0, 2).join(' ').toUpperCase();
+      document.getElementById('heroWatermark').textContent = shortCode;
+    }
+
+    function renderComparables() {
+      const displayBrand = state.brand === 'Land' ? 'Land Rover' : state.brand;
+      document.getElementById('compCardTitle').textContent = `Similar ${displayBrand} Models`;
+      const modelsObj = DATASET.catalog[state.brand] || {};
+      const entries = Object.entries(modelsObj).slice(0, 4);
+      document.getElementById('comparablesList').innerHTML = entries.map(([m, info]) => `
+        <div class="comp-row" onclick="loadComparable('${state.brand.replace(/'/g, "\\'")}', '${m.replace(/'/g, "\\'")}')">
+          <div>
+            <div class="comp-name">${displayBrand} ${m}</div>
+            <div class="comp-meta">${info.model_year} · ${info.milage.toLocaleString()} mi · ${info.count} comps</div>
+          </div>
+          <div class="comp-price">${fmtUSD(info.median_price)}</div>
+        </div>
+      `).join('');
+    }
+
+    function loadComparable(brand, model) {
+      state.brand = brand;
+      renderBrandList(state.searchQuery);
+      populateModels(brand, model);
+      applyModelDefaults(brand, model);
+      switchView('valuation');
+      runValuation();
+    }
+
+    function renderShowroom() {
+      const q = state.searchQuery.toLowerCase();
+      const maxAsk = state.asking_price;
+      const cars = FULL_INVENTORY.filter(car => {
+        const dispBrand = car.brand === 'Land' ? 'Land Rover' : car.brand;
+        const matchesQuery = !q || (dispBrand + ' ' + car.model).toLowerCase().includes(q);
+        const matchesBrand = !state.showroomBrand || car.brand === state.showroomBrand;
+        const matchesFuel = state.showroomFuel === 'All' || car.fuel_type === state.showroomFuel;
+        const matchesPrice = car.price <= maxAsk;
+        return matchesQuery && matchesBrand && matchesFuel && matchesPrice;
+      });
+
+      document.getElementById('panelHeading').innerHTML = `In Stock <span>(${cars.length})</span>`;
+
+      if (cars.length === 0) {
+        document.getElementById('showroomGrid').innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 56px 24px; background: var(--card-bg); border-radius: var(--radius-card);">
+            <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px;">No vehicles match these filters</div>
+            <div style="font-size: 13.5px; color: var(--ink-secondary); margin-bottom: 18px;">Try increasing the Asking Price slider, switching Fuel Type to All, or clearing the selected Brand.</div>
+            <button class="primary-cta" style="width: auto; padding: 11px 22px;" onclick="resetShowroomFilters()">Clear Cars Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      const displayCars = cars.slice(0, 24);
+      const colors = ['Green', 'Gray', 'Blue', 'White', 'Black', 'Silver'];
+      document.getElementById('showroomGrid').innerHTML = displayCars.map((car, idx) => {
+        const dispBrand = car.brand === 'Land' ? 'Land Rover' : car.brand;
+        const bodyType = detectBodyType(car.brand, car.model);
+        const cName = idx === 0 ? 'Green' : colors[idx % colors.length];
+        const shortWM = car.model.split(' ').slice(0, 2).join(' ').toUpperCase();
+        const fuelLabel = car.fuel_type === 'Missing' ? 'Electric / EV' : car.fuel_type;
+        const safeBrand = car.brand.replace(/'/g, "\'");
+        const safeModel = car.model.replace(/'/g, "\'");
+        return `
+          <article class="car-card interactive ${idx === 0 ? 'hero-mint' : ''}" onclick="loadShowroomCar('${safeBrand}', '${safeModel}')">
+            <div class="watermark-text">${shortWM}</div>
+            <div class="card-top">
+              <div>
+                <div class="card-title">${dispBrand} ${car.model}</div>
+                <div class="card-subtitle">${car.model_year} · ${fuelLabel}</div>
+              </div>
+              <div class="card-price-block">
+                <div class="card-price">${fmtUSD(car.price)}</div>
+                <span class="arrow-circle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                </span>
+              </div>
+            </div>
+            <div class="car-stage">${renderCarVisual(car.brand, car.model, bodyType, cName)}</div>
+            <div class="card-specs">
+              <div class="spec-col">
+                <span class="spec-val">${car.hp} HP</span>
+                <span class="spec-lbl">Horsepower</span>
+              </div>
+              <div class="spec-col">
+                <span class="spec-val">${car.disp}</span>
+                <span class="spec-lbl">Engine</span>
+              </div>
+              <div class="spec-col">
+                <span class="spec-val">${(car.milage / 1000).toFixed(0)}k mi</span>
+                <span class="spec-lbl">Median Miles</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function resetShowroomFilters() {
+      state.showroomBrand = null;
+      state.showroomFuel = 'All';
+      state.searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      syncAsking(120000, false);
+      renderBrandList('');
+      document.querySelectorAll('#fuelPills .pill-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.fuel === 'All');
+      });
+      renderShowroom();
+    }
+
+    function loadShowroomCar(brand, model) {
+      const car = FULL_INVENTORY.find(c => c.brand === brand && c.model === model);
+      if (!car) return;
+      state.brand = car.brand;
+      state.showroomBrand = car.brand;
+      renderBrandList(state.searchQuery);
+      populateModels(car.brand, car.model);
+      document.getElementById('engineInput').value = car.engine;
+      document.getElementById('yearInput').value = car.model_year;
+      document.getElementById('milageInput').value = car.milage;
+      setFuelUI(car.fuel_type);
+      syncAsking(car.price, false);
+      switchView('valuation');
+      runValuation();
+    }
+
+    function renderDepreciationSVG(points) {
+      const container = document.getElementById('depreciationChart');
+      if (!points || points.length < 2) {
+        container.innerHTML = '<div style="color:var(--ink-muted);font-size:13px;">Depreciation curve unavailable</div>';
+        return;
+      }
+      const W = 420, H = 148, padL = 16, padR = 16, padT = 22, padB = 26;
+      const vals = points.map(p => p.estimated_market_value);
+      const minV = Math.min(...vals) * 0.86;
+      const maxV = Math.max(...vals) * 1.06;
+      const span = Math.max(1, maxV - minV);
+
+      const coords = points.map((p, i) => {
+        const x = padL + (i / (points.length - 1)) * (W - padL - padR);
+        const y = padT + (1 - (p.estimated_market_value - minV) / span) * (H - padT - padB);
+        return { x, y, ...p };
+      });
+
+      const linePath = coords.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`).join(' ');
+      const areaPath = `${linePath} L ${coords[coords.length - 1].x.toFixed(1)} ${H - padB} L ${coords[0].x.toFixed(1)} ${H - padB} Z`;
+
+      container.innerHTML = `
+        <svg class="dep-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="depFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#10B981" stop-opacity="0.24"/>
+              <stop offset="100%" stop-color="#10B981" stop-opacity="0.01"/>
+            </linearGradient>
+          </defs>
+          <path d="${areaPath}" fill="url(#depFill)"/>
+          <path d="${linePath}" fill="none" stroke="#111317" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+          ${coords.map((pt, i) => `
+            <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${i === 0 || i === coords.length - 1 ? 4.8 : 3.5}" fill="#111317" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="${pt.x.toFixed(1)}" y="${(pt.y - 10).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#111317">$${(pt.estimated_market_value / 1000).toFixed(1)}k</text>
+            <text x="${pt.x.toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10" font-weight="600" fill="#8E939B">Yr +${pt.year_offset}</text>
+          `).join('')}
+        </svg>
+      `;
+
+      const loss = vals[0] - vals[vals.length - 1];
+      document.getElementById('depLossVal').textContent = `-${fmtUSD(Math.max(0, loss))}`;
+      document.getElementById('depYr1').textContent = fmtUSD(vals[1]);
+      document.getElementById('depYr3').textContent = fmtUSD(vals[3] || vals[vals.length - 1]);
+      document.getElementById('depYr5').textContent = fmtUSD(vals[vals.length - 1]);
+    }
+
+    function renderValuationUI(data) {
+      state.lastResponse = data;
+      const dispBrand = state.brand === 'Land' ? 'Land Rover' : state.brand;
+      const year = Number(document.getElementById('yearInput').value);
+      const milage = Number(document.getElementById('milageInput').value);
+      const fuelText = state.fuel_type === 'Missing' ? 'Electric / EV' : state.fuel_type;
+
+      document.getElementById('heroTitle').textContent = `${dispBrand} ${state.model}`;
+      document.getElementById('heroSubtitle').textContent = `${year} · ${fuelText} · ${milage.toLocaleString()} mi`;
+
+      const displayPrice = state.priceMode === 'mean'
+        ? data.expected_market_value_usd
+        : data.median_listing_value_usd;
+      document.getElementById('heroPrice').textContent = fmtUSD(displayPrice);
+      updateHeroArtwork();
+
+      const fe = data.engineered_features || {};
+      document.getElementById('specHp').textContent = fe.horsepower ? `${Math.round(fe.horsepower)} HP` : 'N/A';
+      const engDesc = fe.displacement_l
+        ? `${fe.displacement_l}L${fe.cylinders ? ' ' + Math.round(fe.cylinders) + '-Cyl' : ''}${fe.is_turbo ? ' T' : ''}`
+        : (fuelText.includes('Electric') ? 'Electric' : 'Standard');
+      document.getElementById('specEngine').textContent = engDesc;
+
+      const grade = data.deal_grade || 'Fair Market Price';
+      document.getElementById('specGrade').textContent = grade.replace(' Market Price', ' Price');
+      const badge = document.getElementById('dealGradeBadge');
+      badge.textContent = grade;
+      badge.className = 'grade-pill ' + (
+        grade.includes('Great') ? 'grade-great' :
+        grade.includes('Over') ? 'grade-high' : 'grade-fair'
+      );
+
+      document.getElementById('specLow').textContent = fmtUSD(data.interval_80_low_usd);
+      document.getElementById('specMedian').textContent = fmtUSD(data.median_listing_value_usd);
+      document.getElementById('specHigh').textContent = fmtUSD(data.interval_80_high_usd);
+      document.getElementById('specLuxury').textContent = fe.is_luxury ? 'Luxury' : 'Mainstream';
+
+      const low = data.interval_80_low_usd;
+      const high = data.interval_80_high_usd;
+      const mean = data.expected_market_value_usd;
+      const ask = state.asking_price;
+      const minScale = Math.min(low * 0.72, ask * 0.85);
+      const maxScale = Math.max(high * 1.18, ask * 1.12);
+      const pct = v => Math.max(3, Math.min(97, ((v - minScale) / Math.max(1, maxScale - minScale)) * 100));
+
+      const leftP = pct(low);
+      const rightP = pct(high);
+      document.getElementById('gaugeBand').style.left = `${leftP}%`;
+      document.getElementById('gaugeBand').style.width = `${Math.max(8, rightP - leftP)}%`;
+      document.getElementById('markerMean').style.left = `${pct(mean)}%`;
+      document.getElementById('markerAsk').style.left = `${pct(ask)}%`;
+
+      document.getElementById('gaugeMeanLbl').textContent = fmtUSD(mean);
+      document.getElementById('gaugeAskLbl').textContent = fmtUSD(ask);
+      const delta = ask - mean;
+      document.getElementById('deltaSummary').textContent =
+        `${delta >= 0 ? '+' : '-'}${fmtUSD(Math.abs(delta))} vs Expected Mean`;
+
+      const curve = data.depreciation_5yr || [0, 1, 2, 3, 4, 5].map(yr => ({
+        year_offset: yr,
+        projected_year: 2024 + yr,
+        projected_milage: milage + yr * 12000,
+        estimated_market_value: mean * Math.pow(0.875, yr)
+      }));
+      renderDepreciationSVG(curve);
+    }
+
+    function offlineFallbackPredict(payload) {
+      const info = (DATASET.catalog[payload.brand] || {})[payload.model] || { median_price: 28000, model_year: 2016, milage: 65000 };
+      const yrDiff = payload.model_year - info.model_year;
+      const miDiff = (payload.milage - info.milage) / 15000;
+      const raw = Math.max(3500, info.median_price * Math.pow(1.07, yrDiff) * Math.pow(0.94, miDiff) * (payload.accident === 'None reported' ? 1 : 0.89));
+      const mean = raw * 1.0755;
+      const low = raw * 0.72;
+      const high = raw * 1.38;
+      const hpMatch = String(payload.engine).match(/(\d+\.?\d*)HP/i);
+      const dispMatch = String(payload.engine).match(/(\d+\.?\d*)\s*L/i);
+      const cylMatch = String(payload.engine).match(/(\d+)\s*Cylinder|\b[VIWH](\d+)\b/i);
+      const grade = payload.asking_price <= low * 1.05 ? 'Great Deal' : payload.asking_price <= mean * 1.10 ? 'Fair Market Price' : 'Overpriced';
+      return {
+        expected_market_value_usd: mean,
+        median_listing_value_usd: raw,
+        interval_80_low_usd: low,
+        interval_80_high_usd: high,
+        deal_grade: grade,
+        engineered_features: {
+          vehicle_age: 2024 - payload.model_year,
+          horsepower: hpMatch ? parseFloat(hpMatch[1]) : 280,
+          displacement_l: dispMatch ? parseFloat(dispMatch[1]) : 3.0,
+          cylinders: cylMatch ? parseFloat(cylMatch[1] || cylMatch[2]) : 6,
+          is_turbo: /turbo|supercharged/i.test(payload.engine),
+          is_luxury: ['Mercedes-Benz','BMW','Audi','Lexus','Porsche','Land','Tesla','Cadillac'].includes(payload.brand)
+        },
+        depreciation_5yr: [0, 1, 2, 3, 4, 5].map(yr => ({
+          year_offset: yr,
+          projected_year: 2024 + yr,
+          projected_milage: payload.milage + yr * 12000,
+          estimated_market_value: mean * Math.pow(0.87, yr)
+        }))
+      };
+    }
+
+    function schedulePredict() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(runValuation, 240);
+    }
+
+    async function runValuation() {
+      const cards = document.getElementById('valuationCards');
+      cards.classList.add('loading-pulse');
+
+      const payload = {
+        brand: state.brand,
+        model: state.model,
+        model_year: Number(document.getElementById('yearInput').value) || 2016,
+        milage: Number(document.getElementById('milageInput').value) || 67500,
+        fuel_type: state.fuel_type,
+        engine: document.getElementById('engineInput').value || '295.0HP 3.5L V6 Cylinder Engine Gasoline Fuel',
+        transmission: document.getElementById('transSelect').value || '8-Speed A/T',
+        ext_col: state.ext_col,
+        int_col: 'Black',
+        accident: state.accident,
+        clean_title: state.clean_title,
+        asking_price: state.asking_price
+      };
+
+      try {
+        const res = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('API Error ' + res.status);
+        const data = await res.json();
+        setApiStatus(true);
+        renderValuationUI(data);
+      } catch (err) {
+        setApiStatus(false);
+        renderValuationUI(offlineFallbackPredict(payload));
+      } finally {
+        cards.classList.remove('loading-pulse');
+      }
+    }
+
+    function setApiStatus(isLive) {
+      state.apiLive = isLive;
+      const badge = document.getElementById('apiBadge');
+      const txt = document.getElementById('apiStatusText');
+      badge.className = 'api-badge ' + (isLive ? 'live' : 'preview');
+      txt.textContent = isLive ? 'FastAPI Live' : 'Preview Mode';
+    }
+
+    function resetDefaults() {
+      state.brand = 'Lexus';
+      state.model = 'RX 350 Base';
+      state.fuel_type = 'Gasoline';
+      state.showroomBrand = null;
+      state.showroomFuel = 'All';
+      state.ext_col = 'Green';
+      state.clean_title = 'Yes';
+      state.accident = 'None reported';
+      state.searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('toggleCleanTitle').classList.add('active');
+      document.getElementById('toggleNoAccident').classList.add('active');
+      renderBrandList('');
+      populateModels('Lexus', 'RX 350 Base');
+      document.getElementById('engineInput').value = '295.0HP 3.5L V6 Cylinder Engine Gasoline Fuel';
+      document.getElementById('yearInput').value = 2016;
+      document.getElementById('milageInput').value = 67500;
+      document.getElementById('transSelect').value = '8-Speed A/T';
+      setFuelUI('Gasoline');
+      selectColor('Green');
+      syncAsking(26500, false);
+      switchView('valuation');
+      runValuation();
+    }
+
+    async function initApp() {
+      renderHistogram();
+      resetDefaults();
+      try {
+        const r = await fetch('/health');
+        if (r.ok) {
+          const h = await r.json();
+          setApiStatus(Boolean(h.model_loaded));
+        }
+      } catch (_) {
+        setApiStatus(false);
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
