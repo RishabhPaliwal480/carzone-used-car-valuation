@@ -1,44 +1,46 @@
 # 🚗 CARZONE — Used Car Valuation Platform
 
-An end-to-end, production-ready machine learning web application for predicting used car prices based on vehicle specs, ownership history, and market attributes. Built with **FastAPI**, **Scikit-Learn**, **Tailwind CSS**, and **Docker**.
+An end-to-end, production-ready machine learning web application for predicting fair-market used car prices based on vehicle specs, ownership history, and market attributes. Built with **FastAPI**, **Scikit-Learn**, and **Docker**.
+
+🌐 **Live Demo:** [carzone-used-car-valuation.onrender.com](https://carzone-used-car-valuation.onrender.com) *(Free tier may take ~30s to wake up on first visit)*
 
 ---
 
-## 📌 Features
+## 📌 Key Features
 
-- **ML-Powered Valuation Engine:** High-accuracy regression model pipeline packaged via Joblib, performing automated feature pre-processing, encoding, and scale transformation.
-- **Modern Interactive UI:** Glassmorphic interface built with HTML5, Tailwind CSS, and Alpine.js featuring interactive parameter sliders, quick-fill preset buttons, dynamic visual price gauge, and instant feedback.
-- **Vehicle Showroom & Search:** Browsable showcase of sample vehicles with real-time text filter search, sorting by year/mileage/price, and automated unsplash image hydration.
-- **Production-Grade API Hardening:**
-  - Configurable CORS origin filtering (`ALLOWED_ORIGINS`).
-  - Strict input validation via Pydantic schema schemas with numerical sanity constraints.
-  - In-memory rate limiting with automated `429 Too Many Requests` responses (`RATE_LIMIT_MAX_REQUESTS`).
-  - Structured request-latency logging via FastAPI `lifespan` context handlers.
-  - Toggleable API documentation access (`ENABLE_DOCS`) for security in production environments.
-- **Containerized & Tested:** Fully dockerized setup running under a non-root security context (`appuser`), backed by comprehensive `pytest` test suites.
+* **ML-Powered Valuation Engine:** Tuned `HistGradientBoostingRegressor` (`0.7321` Test Log $R^2$) trained on ~188.5k used vehicle listings, packaged via Joblib with automated feature extraction (`extract_features_v4`) and Duan's smearing bias correction.
+* **Uncertainty Quantification & Deal Grading:** 80% Conformalized Quantile Regression (`Q10` – `Q90`) prediction intervals to grade listings as **Great Deal**, **Fair Market Price**, or **Overpriced**.
+* **5-Year Depreciation Forecast:** Vectorized multi-year value simulation projecting depreciation at `+12,000 miles/year`.
+* **Interactive Showroom & Studio UI:** Single-page CARZONE interface (`frontend/index.html`) with live valuation sliders, brand/fuel/price inventory filtering across 128 catalog vehicles, and dynamic vehicle photo resolution with vector fallbacks.
+* **Production-Grade API Hardening:**
+  * Environment-configurable CORS origin filtering (`ALLOWED_ORIGINS`).
+  * Strict Pydantic input validation (`min_length`, `max_length`, numeric bounds).
+  * Sliding-window per-IP rate limiting with `429 Too Many Requests` responses (`RATE_LIMIT_MAX_REQUESTS`).
+  * Structured JSON request-latency logging and clean startup/shutdown resource management via FastAPI `lifespan`.
+  * Toggleable Swagger/ReDoc documentation (`ENABLE_DOCS`) for production environments.
+* **Containerized & Tested:** Multi-stage/slim `Dockerfile` running under a non-root user (`appuser`), backed by automated `pytest` suites.
 
 ---
 
 ## 🏗️ Project Architecture
 
 ```text
-Project1/
+carzone-used-car-valuation/
 ├── data/
-│   └── raw/
-│       └── used_cars.csv
+│   └── raw/                    # Dataset directory (ignored in Git)
 ├── models/
 │   └── used_car_valuation_bundle.joblib
 ├── src/
 │   ├── __init__.py
-│   ├── api.py
-│   └── model_loader.py
+│   ├── api.py                  # FastAPI server, rate limiter, lifespan & inference routes
+│   ├── features.py             # Domain feature engineering (extract_features_v4)
+│   └── train.py                # Model training, CQR calibration & bundle export
 ├── frontend/
-│   └── index.html
+│   └── index.html              # Single-page CARZONE valuation studio & showroom UI
 ├── tests/
-│   └── test_api.py
-├── Dockerfile
+│   └── test_api.py             # Automated pytest API & validation suite
+├── Dockerfile                  # Non-root production container configuration
 ├── requirements.txt
-├── .env.example
 ├── .gitignore
 └── README.md
 ```
@@ -47,41 +49,34 @@ Project1/
 
 ## 🛠️ Tech Stack
 
-- **Backend Framework:** FastAPI, Uvicorn
-- **Machine Learning:** Scikit-Learn, Pandas, NumPy, Joblib
-- **Validation & Security:** Pydantic v2, Slowapi / Custom Rate Limiter
-- **Frontend:** HTML5, Tailwind CSS, Alpine.js, Lucide Icons
-- **DevOps & Testing:** Docker, Pytest, Git
+* **Backend & API:** Python 3.11, FastAPI, Uvicorn, Pydantic v2
+* **Machine Learning:** Scikit-Learn, Pandas, NumPy, Joblib
+* **Frontend:** Vanilla HTML5, CSS3, JavaScript (Wikipedia/Wikimedia photo hydration + inline SVGs)
+* **DevOps & Testing:** Docker, Pytest, Render
 
 ---
 
 ## ⚙️ Environment Variables & Configuration
 
-Create a `.env` file in the root directory (or use environment variables in deployment environments):
+Configure these variables in your `.env` file or hosting provider's environment settings:
 
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
-| `ALLOWED_ORIGINS` | `*` | Comma-separated list of allowed CORS origins (e.g., `https://yourdomain.com`). |
-| `ENABLE_DOCS` | `true` | Set to `false` to disable `/docs` and `/redoc` in production. |
-| `RATE_LIMIT_MAX_REQUESTS` | `30` | Maximum requests allowed per client IP per window. |
-| `RATE_LIMIT_WINDOW_SECONDS` | `60` | Duration of the rate limit window in seconds. |
+| `ALLOWED_ORIGINS` | `http://localhost:8000,http://127.0.0.1:8000` | Comma-separated list of allowed CORS origins (e.g., `https://carzone-used-car-valuation.onrender.com`). |
+| `ENABLE_DOCS` | `true` | Set to `false` to disable `/docs`, `/redoc`, and `/openapi.json` in production. |
+| `RATE_LIMIT_MAX_REQUESTS` | `60` | Maximum `/predict` requests allowed per client IP per window. |
+| `RATE_LIMIT_WINDOW_SEC` | `60` | Sliding-window duration in seconds for rate limiting. |
 
 ---
 
 ## 🚀 Getting Started Locally
 
-### 1. Prerequisites
-- Python 3.10+
-- Git
-
-### 2. Virtual Environment Setup
+### 1. Clone & Set Up Virtual Environment
 
 ```bash
-# Clone the repository
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/RishabhPaliwal480/carzone-used-car-valuation.git
+cd carzone-used-car-valuation
 
-# Create and activate virtual environment
 python -m venv .venv
 
 # On Windows PowerShell:
@@ -90,43 +85,37 @@ python -m venv .venv
 # On Linux/macOS:
 source .venv/bin/activate
 
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Run the Development Server
+### 2. Run the Development Server
 
 ```bash
 uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Access the application in your browser at `http://localhost:8000`.
+Open `http://localhost:8000` in your browser.
 
 ---
 
-## 🐳 Docker Deployment
+## 🐳 Docker & Cloud Deployment (Render)
 
-The application includes an optimized, multi-stage `Dockerfile` running as a non-privileged user for enhanced security.
-
-### Build Docker Image
+### Run Locally via Docker
 
 ```bash
 docker build -t carzone-valuation .
+docker run --rm -p 8000:8000 -e ENABLE_DOCS=false carzone-valuation
 ```
 
-### Run Container
+### Deploy on Render
 
-```bash
-docker run -d -p 8000:8000 --name carzone-app --env-file .env carzone-valuation
-```
-
-View the live app at `http://localhost:8000`.
+1. Connect `RishabhPaliwal480/carzone-used-car-valuation` as a **Web Service** on Render using the **Docker** runtime.
+2. Set the environment variables `ENABLE_DOCS=false` and `ALLOWED_ORIGINS=https://carzone-used-car-valuation.onrender.com`.
+3. Every push to `main` automatically rebuilds and redeploys the live service.
 
 ---
 
 ## 🧪 Running Tests
-
-Execute the automated test suite covering health endpoints, prediction schemas, input validation boundaries, and rate limits:
 
 ```bash
 pytest -v
@@ -138,22 +127,28 @@ pytest -v
 
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
-| `/` | `GET` | Serves the single-page frontend application (`frontend/index.html`). |
-| `/health` | `GET` | API health check and model loading status verification. |
-| `/predict` | `POST` | Accepts vehicle attributes in JSON format and returns predicted valuation. |
-| `/docs` | `GET` | Interactive Swagger API documentation (when `ENABLE_DOCS=true`). |
+| `/` | `GET` | Serves the single-page CARZONE frontend (`frontend/index.html`). |
+| `/health` | `GET` | Health check returning API status and whether the model bundle is loaded. |
+| `/catalog` | `GET` | Returns vehicle catalog metadata stored in the model bundle. |
+| `/predict` | `POST` | Returns expected market value, 80% CQR interval, deal grade, and 5-year depreciation curve. |
+| `/docs` | `GET` | Interactive Swagger API documentation (available when `ENABLE_DOCS=true`). |
 
 ### Sample Prediction Payload (`POST /predict`)
 
 ```json
 {
-  "year": 2021,
-  "mileage": 28000,
-  "engine_size": 2.0,
-  "fuel_type": "Petrol",
-  "transmission": "Automatic",
-  "owner_type": "First",
-  "brand": "Toyota"
+  "brand": "Lexus",
+  "model": "RX 350 Base",
+  "model_year": 2016,
+  "milage": 67500,
+  "fuel_type": "Gasoline",
+  "engine": "295.0HP 3.5L V6 Cylinder Engine Gasoline Fuel",
+  "transmission": "8-Speed A/T",
+  "ext_col": "Green",
+  "int_col": "Black",
+  "accident": "None reported",
+  "clean_title": "Yes",
+  "asking_price": 26500
 }
 ```
 
@@ -161,4 +156,4 @@ pytest -v
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the LICENSE file for details.
+This project is licensed under the MIT License.
